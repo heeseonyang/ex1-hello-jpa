@@ -414,3 +414,414 @@ JPA를 통해 엔티티를 가져오면 얘는 제이피에이가 관리를한�
 - JPA는 SQL을 추상화한 JPQL이라는 객체지향쿼리언어를 제공한다
 - JPQL은 엔티티 객체를 대상으로 쿼리, SQL은 테이블을 대상으로 쿼리!
 
+# 영속성 컨텍스트 1
+
+### JPA에서 가장 중요한 2가지
+
+- 객체와 관계형 데이터베이스 매핑하기 (정적)
+- 영속성 컨텍스트 (실제 JPA가 내부에서 도대체 어떻게 동작하나?)
+
+
+
+### 엔티티 매니저 팩토리와 엔티티 매니저
+
+![image-20210802182351715](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802182351715.png)
+
+
+
+엔티티매니저팩토리를 통해서 고객의 요청이 올 때마다 엔티티매니저를 생성한다.
+
+이 엔티티 매니저는 내부적으로 데이터베이스 커넥션을 사용하여 디비를 사용하게 된다.
+
+
+
+그러면 영속성 컨텍스트는 도대체 뭘까?
+
+- "엔티티를 영구 저장하는 환경" 이라는 뜻
+
+- EntityManager.persist(entity); -> 영속성컨텍스트를 통해서 entity를 영구저장한다.
+
+
+
+
+
+영속성 컨텍스트는 논리적인 개념으로 눈에 보이지 않는다.
+
+엔티티 매니저를 통해서 영속성 컨텍스트에 접근한다.
+
+엔티티매니저를 생성하면 1:1로 영속성 컨텍스트가 생성된다.
+
+
+
+
+
+### 엔티티의 생명주기
+
+• 비영속 (new/transient) 영속성 컨텍스트와 전혀 관계가 없는 새로운 상태
+
+• 영속 (managed) 영속성 컨텍스트에 관리되는 상태
+
+• 준영속 (detached) 영속성 컨텍스트에 저장되었다가 분리된 상태
+
+• 삭제 (removed) 삭제된 상태
+
+
+
+
+
+### 비영속 상태란?
+
+:JPA와 전혀 관련이 없는 상태
+
+![image-20210802183057985](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802183057985.png)
+
+
+
+
+
+### 영속성 상태?
+
+: 객체를 생성한 후에 EntityManager를 얻어와서 그 안에 persist로 객체를 넣는다.
+
+![image-20210802183124948](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802183124948.png)
+
+
+
+
+
+![image-20210802183158336](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802183158336.png)
+
+
+
+이렇게 영속상태가 된다고만 해서  디비에 저장되는 것은 아니다.
+
+디비는 이후에 커밋을 해야 저장된다.
+
+
+
+### 준영속 , 삭제 상태란?
+
+![image-20210802183401221](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802183401221.png)
+
+
+
+### 영속성 컨텍스트의 이점
+
+• 1차 캐시
+
+: 맵에 저장하면 먼저 1차캐시에 가서 값을 찾는다.
+
+엔티티매니저는 데이터베이스 트랜젝션 단위로 만들고 끝나면 종료한다.
+
+고객의 요청이 들어와 비지니스가 끝나버리면 캐시가 다 지워진다.
+
+데이터베이스에서 조회를 하면 데이터베이스트랜젝션 단위로 ..
+
+데이터베이스 트랜잭션 안에서만 효과가 있다.
+
+
+
+'''
+
+```
+ //비영속
+  Member member = new Member();
+  member.setId(101L);
+  member.setName("HelloJPA");
+
+  //영속
+  System.out.println("=== BEFORE ===");
+  em.persist(member);
+  System.out.println("=== AFTER ===");
+
+Member findMember = em.find(Member.class, 101L);
+
+System.out.println("findMember.id =" + findMember.getId());
+  System.out.println("findMember.id =" + findMember.getName());
+```
+
+console
+
+![image-20210802185311917](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802185311917.png)
+
+조회를 했는데 select쿼리가 나오지 않았다.
+
+왜냐하면 member값이 1차쿠키에 저장되니까
+
+값을 DB에서 가져오는 것이 아니라 1차쿠키에서 먼저 찾아서 가지고 오는 것.
+
+
+
+이번엔 새로 만들어 볼게
+
+
+
+
+
+똑같은걸 두번 조회할 땐 두번째 부터는 1차캐시에서 가지고 온다
+
+
+
+
+
+
+
+
+
+• 동일성(identity) 보장
+
+영속엔티티의 동일성을 보장해준다.
+
+'''
+
+```java
+Member a = em.find(Member.class, member1");
+Member b = em.find(Member.class, member1");
+                   
+System.out.println(a == b); //동일성 비교 true
+```
+
+1차 캐시로 반복 가능한 읽기(REPEATABLE READ)등급의 트랜잭션 격리수준을
+
+데이터베이스가 아닌 애플리케이션 차원에서 제공
+
+
+
+
+
+
+
+• 트랜잭션을 지원하는 쓰기 지연 (transactional write-behind)
+
+영속성컨텍스 안에는 1차캐시도 있지만 쓰기지연 SQL저장소라는 곳도 있다.
+
+JPA가 A를 1차캐시에 저장하고 쿼리를 생성해서 쓰기지연 저장소에 쌓아둔다.
+
+
+
+B를 넣으면 이때도 1차캐시에 저장해서 쓰기지연 SQL저장소에 쌓아둔다,
+
+
+
+커밋하면 쓰기지연 SQL에 있던 애들이 Flush되면서 날라가고 실제 DB저장소에 저장된다
+
+'''
+
+```
+EntityTransaction tx = em.getTransaction();/*트렌젝션 생성 */
+        //엔티티 매니저는 데이터 변경시 트랜젝션을 시작해야 한다.
+        tx.begin(); /*트렌젝션 시작*/
+
+
+            //영속
+
+            Member member1 = new Member(150L, "A");
+            Member member2 = new Member(160L, "B");
+
+            em.persist(member1);
+            em.persist(member2);
+            //여기까지 INSERT SQL을 데이터베이스에 보내지 않는다.
+            System.out.println("=================");
+
+            //커밋하는 순간 데이터베이스에 INSERT SQL을 보낸다.
+            tx.commit(); /*커밋*/
+
+```
+
+
+
+console
+
+![image-20210802190838570](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802190838570.png)
+
+콘솔창을 보면 "====" 이후에 쿼리문이 나오는 것을 알 수 있다. -> 커밋 후 SQL생성
+
+
+
+• 변경 감지(Dirty Checking)
+
+:
+
+- 엔티티 수정
+
+```java
+Member member = em.find(Member.class, 150L); //찾아와서
+member.setName("ZZZZZ"); //값만 변경
+```
+
+jpa는 변경감지라는 기능으로 엔티티를 변경할 수 있는 기능이 제공된다
+
+마치 우리가 생각하기에는 엔티티의 값을 바꾸려면 값을 바꾸고 update해달라는 코드를 써야할 것 같지만 우리는 값만 바꿔주고 저장하라는 코드를 작성하지 않아도 된다.
+
+
+
+커밋을 하면 엔티티와 스냅샷을 비교한다.
+
+1차캐시 안에는 pk,entity,스냅샷(내가 값을 읽어온 최초 시점을 스냅샷으로 떠놓음)이 있다.
+
+내가 값을 변경해서 커밋되는 시점에 jpa가 1차캐시안의 값을 다 비교한다
+
+비교해보고 값이 바껴있으면 sql저장소에 저장된 업데이트 쿼리를 데이터베이스저장소에 반영한다.
+
+
+
+- - 엔티티 삭제
+
+- ```java
+    //삭제 대상 엔티티 조회 
+    
+    Member memberA = em.find(Member.class, “memberA"); 
+    em.remove(memberA); //엔티티 삭제
+    ```
+
+• 지연 로딩(Lazy Loading)
+
+
+## 플러시
+
+영속성 컨텍스트의 변경내용을 데이터베이스에 반영하는 것.
+
+영속성 컨텍스트의 쿼리를 디비에 날려주는 것.
+
+데이터베이스가 커밋되면 플러시가 자동으로 발생한다.
+
+
+
+플러시가 발생하면?
+
+- 변경이 감지됨
+- 수정된 엔티티를 쓰기지연 SQL저장소에 등록한다
+- 쓰기지연 Sql저장소의 쿼리를 데이터베이스에 전송한다.
+
+
+
+영속성 컨텍스트를 어떻게 플러시하는가?
+
+- em.flush()라고 직접 호출하기
+- 트랜잭션 커밋 - 자동 호출
+- JPQL 쿼리 호출 - 자동 호출
+
+
+
+'''
+
+```
+Member member = new Member(200L, "member200");
+em.persist(member);
+
+em.flush();//강제로 호출.
+
+System.out.println("=================");
+
+tx.commit(); /*커밋*/
+```
+
+![image-20210802221450979](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802221450979.png)
+
+플러시를 해버리니까 커밋도 하기 전에 디비에 저장되어버린다.
+
+
+
+
+
+### JPQL쿼리 실행 시 플러시가 자동으로 호출되는 이유
+
+```java
+    em.persist(memberA);
+em.persist(memberB);
+em.persist(memberC);
+//중간에 JPQL 실행
+    query = em.createQuery("select m from Member m", Member.class);
+    List<Member> members= query.getResultList()
+```
+
+memberA,B,C를 em.persist로 저장을 했다.
+
+실제 데이터베이스에 이 쿼리가 날라가지 않는다.
+
+
+
+넣은 다음 바로 아래 코드로 조회를 해온다.
+
+그럼 조회가 될까 안될까?
+
+조회가 안된다.
+
+왜? 디비에 쿼리라도 날라가야 디비에서 가져올텐데
+
+지금은 쿼리조차 실행되지 않았기 때문이다.
+
+그래서 jpa는 이런걸 방지하기 위해 무조건 플러시를 날려버린다.
+
+
+
+## 플러시란?
+
+• 영속성 컨텍스트를 비우지 않음
+
+• 영속성 컨텍스트의 변경내용을 데이터베이스에 동기화
+
+• 트랜잭션이라는 작업 단위가 중요 -> 커밋 직전에만 동기화  하면 됨
+
+• 영속 -> 준영속
+em.persist ->영속상태가 된다.
+
+em.find 등을 해서 jpa를 사용하여 조회했는데 얘가 영속상태에 없다? 그러면
+
+디비에서 가져와서 올려 -> 그럼 이걸 영속상태라고 한다.
+
+• 영속 상태의 엔티티가 영속성 컨텍스트에서 분리(detached)
+
+• 영속성 컨텍스트가 제공하는 기능을 사용 못함
+
+
+
+
+
+
+
+준영속 상태로 만들기 예시 1)
+
+'''
+
+```java
+Member member = em.find(Member.class, 150L);
+member.setName("AAAAA");
+
+em.detach(member); //이제 영속성에서 떼어낸다
+
+System.out.println("=================");
+
+tx.commit(); /*그럼 이제 쟤를 jpa에서 관리하지 않기때문에 커밋을 해도 아무일도 일어나지 않아*/
+```
+
+![image-20210802222550084](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802222550084.png)
+
+select만 나오고 update쿼리는 나오지 않는다.
+
+
+
+준영속 상태로 만들기 예시 2)
+
+'''
+
+```java
+Member member = em.find(Member.class, 150L);
+member.setName("AAAAA");
+
+em.clear(); //통으로 다 날려버린다.
+
+System.out.println("=================");
+
+tx.commit(); /*완전 초기화 되기 때문에 커밋을 해도 아무일도 일어나지 않아*/
+```
+
+![image-20210802222807065](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802222807065.png)
+
+
+
+준영속 상태로 만들기 예시 3)
+
+em.close(); : 영속성 컨텍스트를 종료
+
+

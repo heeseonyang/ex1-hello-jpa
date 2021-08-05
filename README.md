@@ -825,3 +825,313 @@ tx.commit(); /*완전 초기화 되기 때문에 커밋을 해도 아무일도 �
 em.close(); : 영속성 컨텍스트를 종료
 
 
+
+# 엔티티 매핑
+
+
+
+### 목차
+
+• 객체와 테이블 매핑
+
+• 데이터베이스 스키마 자동 생성
+
+• 필드와 컬럼 매핑
+
+• 기본 키 매핑
+
+• 실전 예제 - 1. 요구사항 분석과 기본 매핑
+
+
+
+### 엔티티 매핑 소개
+
+• 객체와 테이블 매핑: @Entity, @Table
+
+• 필드와 컬럼 매핑: @Column
+
+• 기본 키 매핑: @Id
+
+• 연관관계 매핑: @ManyToOne,@JoinColumn
+
+
+
+
+
+## 객체와 테이블 매핑
+
+####  @Entity
+
+• @Entity가 붙은 클래스는 JPA가 관리, 엔티티라 한다.
+
+• JPA를 사용해서 테이블과 매핑할 클래스는 @Entity 필수
+
+• 주의
+
+- 기본 생성자 필수(파라미터가 없는 public 또는 protected 생성자)
+
+- final 클래스, enum, interface, inner 클래스 사용X
+
+- 저장할 필드에 final 사용 X
+
+
+
+#### @Entity 속성 정리
+
+• 속성: name
+
+• JPA에서 사용할 엔티티 이름을 지정한다.
+
+• 기본값: 클래스 이름을 그대로 사용(예: Member)
+
+• 같은 클래스 이름이 없으면 가급적 기본값을 사용한다
+
+
+
+#### Table
+
+• @Table은 엔티티와 매핑할 테이블 지정
+
+![image-20210802225358525](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802225358525.png)
+
+![image-20210802225440145](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802225440145.png)
+
+
+
+
+
+## 데이터베이스 스키마 자동 생성
+
+#### 데이터베이스 스키마 자동 생성
+
+• DDL을 애플리케이션 실행 시점에 자동 생성
+
+실행시점에 create문으로 db를 만들어놓고 시작할 수 있다.
+
+• 테이블 중심 -> 객체 중심
+
+• 데이터베이스 방언을 활용해서 데이터베이스에 맞는 적절한 DDL 생성
+
+varchar , varchar2이런거 적절하게 맞게 생성해준다.
+
+• 이렇게 생성된 DDL은 개발 장비에서만 사용
+
+• 생성된 DDL은 운영서버에서는 사용하지 않거나, 적절히 다듬 은 후 사용
+
+
+
+#### 데이터베이스 스키마 자동 생성 - 속성
+
+##### hibernate.hbm2ddl.auto 라는 옵션을 걸어준다. (persistence.xml에 추가)
+
+![image-20210802230921149](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802230921149.png)
+
+
+
+![image-20210802231035154](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802231035154.png)
+
+run해보면 기존에 있던 테이블을 지우고 새로 테이블을 생성해낸다.
+
+
+
+![image-20210802231133438](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802231133438.png)
+
+만약 age를 새로 추가해보면?
+
+![image-20210802231234468](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802231234468.png)
+
+원래 있던 테이블을 지우고 age컬럼을 추가해서 새 테이블을 만든 걸 볼 수 있다.
+
+![image-20210802231311656](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802231311656.png)
+
+DB에서 확인해보니 DB도 AGE컬럼이 추가되어 있는 것을 볼 수 있다.
+
+
+
+보통같은 경우에는 age를 추가하고 alter를 써서 테이블 컬럼을 수정하거나 한다.
+
+그러나 데이터베이스 스키마 자동생성기능으로 이렇게 간단하게 수정할 수 있다.
+
+
+
+![image-20210802231352672](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210802231352672.png)
+
+persistence.xml의 옵션에 위와 같은 명령어들을 넣어서 사용할 수 있다.
+
+
+
+- create-drop: 보통 test를 돌릴 때 깔끔하게 데이터를 날리고싶을 때 사용한다.
+
+- update: 만약 내가 age라는 컬럼을 추가하고 싶은데 테이블을 drop하고 싶지 않을 때 사용한다.
+
+  하지만 지우는 건 안되고 추가하는 것만 된다!
+
+- validate: 예를들어 새로운 컬럼을 추가하였을 때 테이블에 그 컬럼이 없을 시 에러가 난다.
+
+- none: 나는 이 기능이 싫을 때 이 옵션 자체를 주석처리 하거나 옵션에 none이라고 적는다.
+
+
+
+#### 데이터베이스 스키마 자동 생성 - 주의
+
+• 운영 장비에는 절대 create, create-drop, update 사용하면 안된다.
+
+• 개발 초기 단계는 create 또는 update
+
+• 테스트 서버는 update 또는 validate
+
+: ★ 테스트 서버에서는 create쓰면 데이터가 다 날라간다!!
+
+• 스테이징과 운영 서버는 validate 또는 none
+
+
+
+#### DDL 생성 기능
+
+• 제약조건 추가: 회원 이름은 필수, 10자 초과X
+
+• @Column(nullable = false, length = 10)
+
+• 유니크 제약조건 추가
+
+• @Table(uniqueConstraints = {@UniqueConstraint( name = "NAME_AGE_UNIQUE", columnNames = {"NAME", "AGE"} )})
+
+• DDL 생성 기능은 DDL을 자동 생성할 때만 사용되고 JPA의 실행 로직에는 영향을 주지 않는다.
+
+
+
+
+
+## 필드와 컬럼 매핑
+
+##### 요구사항 추가
+
+1. 회원은 일반 회원과 관리자로 구분해야 한다.
+2. 회원 가입일과 수정일이 있어야 한다.
+3. 회원을 설명할 수 있는 필드가 있어야 한다. 이 필드는 길이 제 한이 없다
+
+
+
+## 기본 키 매핑
+
+##### 기본 키 매핑 어노테이션
+
+• @Id
+
+• @GeneratedValue
+
+```java
+@Id @GeneratedValue(strategy = GenerationType.AUTO)
+private Long id;
+```
+
+
+
+## 기본 키 매핑 방법
+
+• 직접 할당: @Id만 사용
+
+• 자동 생성(@GeneratedValue)
+
+​    • IDENTITY: 데이터베이스에 위임, MYSQL
+
+​    • SEQUENCE: 데이터베이스 시퀀스 오브젝트 사용, ORACLE
+
+​        • @SequenceGenerator 필요 • TABLE: 키 생성용 테이블 사용, 모든 DB에서 사용
+
+• @TableGenerator 필요
+
+• AUTO: 방언에 따라 자동 지정, 기본값
+
+
+
+### 1) 직접 할당
+
+- @Id사용
+
+  :그냥 Id를 어노테이션 해주기만 하면 된다.
+
+
+
+
+
+### 2) IDENTITY 전략 - 특징
+
+• 기본 키 생성을 데이터베이스에 위임
+
+• 주로 MySQL, PostgreSQL, SQL Server, DB2에서 사용 (예: MySQL의 AUTO_ INCREMENT)
+
+• JPA는 보통 트랜잭션 커밋 시점에 INSERT SQL 실행
+
+• AUTO_ INCREMENT는 데이터베이스에 INSERT SQL을 실행 한 이후에 ID 값을 알 수 있음
+
+• IDENTITY 전략은 em.persist() 시점에 즉시 INSERT SQL 실행 하고 DB에서 식별자를 조회
+
+
+
+## IDENTITY 전략 - 매핑
+
+![image-20210804213509618](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210804213509618.png)
+
+
+
+## SEQUENCE 전략 - 특징
+
+• 데이터베이스 시퀀스는 유일한 값을 순서대로 생성하는 특별한
+
+데이터베이스 오브젝트(예: 오라클 시퀀스)
+
+• 오라클, PostgreSQL, DB2, H2 데이터베이스에서 사용
+
+
+
+## SEQUENCE 전략 - 매핑
+
+![image-20210804213549443](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210804213549443.png)
+
+
+
+## SEQUENCE - @SequenceGenerator
+
+- 주의: allocationSize 기본값 = 50
+
+![image-20210804213732321](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210804213732321.png)
+
+
+
+## TABLE 전략
+
+• 키 생성 전용 테이블을 하나 만들어서 데이터베이스 시퀀스를 흉 내내는 전략
+
+• 장점: 모든 데이터베이스에 적용 가능
+
+• 단점: 성능
+
+
+
+## TABLE 전략 - 매핑
+
+
+
+![image-20210804213821945](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210804213821945.png)
+
+
+
+
+
+## @TableGenerator - 속성
+
+![image-20210804213838882](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210804213838882.png)
+
+
+
+## 권장하는 식별자 전략
+
+• 기본 키 제약 조건: null 아님, 유일, 변하면 안된다.
+
+• 미래까지 이 조건을 만족하는 자연키는 찾기 어렵다. 대리키(대 체키)를 사용하자.
+
+• 예를 들어 주민등록번호도 기본 키로 적절하기 않다.
+
+• 권장: Long형 + 대체키 + 키 생성전략 사용
+

@@ -1135,3 +1135,231 @@ private Long id;
 
 • 권장: Long형 + 대체키 + 키 생성전략 사용
 
+# 양방향 연관관계와 연관관계의 주인
+
+객체-테이블
+
+테이블-외래키
+
+를 가지고 연관관계를 가지고 조인함
+
+
+
+## 양방향 매핑
+
+![image-20210805211320053](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805211320053.png)
+
+테이블 연관관계는 단방향 연관관계의 테이블연관관계와 똑같다.
+
+##### 왜? 테이블은 TEAM_ID(FK)로 조인하면 된다.
+
+반대로 TEAM의 입장에서 우리 팀에 어떤 멤버가 있는지 알고싶으면
+
+TEAM_ID(PK)로 TEAM_ID(FK)랑 조인하면 된다.
+
+테이블의 연관관계에는 방향이란 개념없이 FK하나만 집어넣으면 양쪽의 관계를 다 알수 있다.
+
+
+
+반면에 객체의 경우에는 반대로 왔다갔다 할 수가 없다.
+
+
+
+
+
+## 양방향매핑 (Member 엔티티는 단방향과 동일)
+
+![image-20210805212039463](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805212039463.png)
+
+
+
+## 양방향 매핑 (Team 엔티티는 컬렉션 추가)
+
+![image-20210805212056457](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805212056457.png)
+
+```java
+@OneToMany(mappedBy = "team") //(일대다에서 "team"과 매핑되어있다)
+```
+
+
+
+
+
+## 양방향 매핑 (반대 방향으로 객체 그래프 탐색)
+
+![image-20210805212151452](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805212151452.png)
+
+
+
+
+
+## 연관관계의 주인과 mappedBy
+
+• mappedBy = JPA의 멘탈붕괴 난이도
+
+• mappedBy는 처음에는 이해하기 어렵다.
+
+• 객체와 테이블간에 연관관계를 맺는 차이를 이해해야 한다. ★
+
+
+
+## 객체와 테이블이 관계를 맺는 차이
+
+##### • 객체 연관관계 = 2개
+
+- 회원 -> 팀 연관관계 1개(단방향)
+
+-  팀 -> 회원 연관관계 1개(단방향)
+
+##### • 테이블 연관관계 = 1개
+
+- 회원 <-> 팀의 연관관계 1개(양방향)
+
+
+
+![image-20210805212714815](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805212714815.png)
+
+1) 객체에서는 참조가 양쪽에 있다.
+
+   단방향이 두개가 있는 거나 다름 없음
+
+2) 테이블은 양방향이라고는 하지만 사실상 이건 방향이 없는 것이다.
+
+   그냥 키 하나로 왔다갔다 할 수 있기 때문에.
+
+
+
+## 객체의 양방향 관계
+
+• 객체의 양방향 관계는 사실 양방향 관계가 아니라 서로 다른 단 뱡향 관계 2개다.
+
+• 객체를 양방향으로 참조하려면 단방향 연관관계를 2개 만들어 야 한다.
+
+![image-20210805212837171](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805212837171.png)
+
+
+
+## 테이블의 양방향 연관관계
+
+• 테이블은 외래 키 하나로 두 테이블의 연관관계를 관리
+
+• MEMBER.TEAM_ID 외래 키 하나로 양방향 연관관계 가짐 (양쪽으로 조인할 수 있다.)
+
+> SELECT *  FROM MEMBER M JOIN TEAM T ON M.TEAM_ID = T.TEAM_ID
+
+> SELECT *  FROM TEAM T JOIN MEMBER M ON T.TEAM_ID = M.TEAM_ID
+
+-> 반대로도 가능하다. 이게 바로 조인키 하나로 다 된다는 것.
+
+
+
+## 둘 중 하나로 외래 키를 관리해야 한다.
+
+![image-20210805212951875](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805212951875.png)
+
+그럼 우리는 값을 수정하려고 할때 어떤 값을 바꿔야 할까?
+
+멤버에 있는 Team과 Team에 있는 List members 중 하나로 외래키를 잡아야한다,
+
+이게 바로 연관관계 주인이다. ▽
+
+
+
+## 연관관계의 주인(Owner)
+
+#### 양방향 매핑 규칙
+
+• 객체의 두 관계중 하나를 연관관계의 주인으로 지정
+
+• 연관관계의 주인만이 외래 키를 관리(등록, 수정)
+
+• 주인이 아닌쪽은 읽기만 가능
+
+• 주인은 mappedBy 속성 사용X
+
+• 주인이 아니면 mappedBy 속성으로 주인 지정
+
+
+
+## 누구를 주인으로?
+
+• 외래 키가 있는 있는 곳을 주인으로 정해라
+
+• 여기서는 Member.team이 연관관계의 주인
+
+![image-20210805221237404](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805221237404.png)
+
+Member의 Team을 연관관계 주인으로 하는 것이 낫다.
+
+왜? Team의 List members로 하면 Team객체에 업데이트 쿼리를 날렸는데 Member에 업데이트 쿼리가 적용된다.
+
+디비 입장에서 보면 외래키가 있는 곳이 무조건 (다, manyToOne), 없는 곳이 무조건 (1,OneToMany)
+
+그냥 외래키가 있는 곳을 주인으로 정하면 헷갈리지 않는다.
+
+
+
+## 양방향 매핑시 가장 많이 하는 실수(연관관계의 주인에 값을 입력하지 않음)
+
+
+
+![image-20210805221923948](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805221923948.png)
+
+
+
+## 양방향 매핑시 연관관계의 주인에 값을 입력해야 한다. (순수한 객체 관계를 고려하면 항상 양쪽다 값을 입력해야 한다.
+
+![image-20210805221952144](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805221952144.png)
+
+양방향매핑을 할 때는 가급적이면 양쪽에 모두 값을 넣어주어라.
+
+
+
+## 양방향 연관관계 주의 - 실습
+
+• 순수 객체 상태를 고려해서 항상 양쪽에 값을 설정하자
+
+• 연관관계 편의 메소드를 생성하자
+
+• 양방향 매핑시에 무한 루프를 조심하자
+
+-  예: toString(), lombok, JSON 생성 라이브러리
+
+
+
+
+
+## 양방향 매핑 정리
+
+• 단방향 매핑만으로도 이미 연관관계 매핑은 완료
+
+• 양방향 매핑은 반대 방향으로 조회(객체 그래프 탐색) 기능이 추 가된 것 뿐
+
+• JPQL에서 역방향으로 탐색할 일이 많음
+
+• 단방향 매핑을 잘 하고 양방향은 필요할 때 추가해도 됨 (테이블에 영향을 주지 않음)
+
+
+
+## 연관관계의 주인을 정하는 기준
+
+• 비즈니스 로직을 기준으로 연관관계의 주인을 선택하면 안됨
+
+##### • 연관관계의 주인은 외래 키의 위치를 기준으로 정해야함
+
+
+
+## 실전예제 2 -연관관계 매핑 시작
+
+### 테이블 구조
+
+- 테이블 구조는 이전과 같다.
+
+![image-20210805230516111](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805230516111.png)
+
+### 객체 구조
+
+- 참조를 사용하도록 변경
+
+![image-20210805230544148](https://raw.githubusercontent.com/heeseonyang/hello-spring/master/img/image-20210805230544148.png)
+

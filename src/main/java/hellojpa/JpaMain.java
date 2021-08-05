@@ -21,18 +21,21 @@ public class JpaMain {
         tx.begin(); /*트렌젝션 시작*/
 
         try {
+            Team team = new Team();
+            team.setName("TeamA");
+            em.persist(team);
 
+            Member member = new Member();
+            member.setUsername("member1");
+            member.setTeam(team);
+            em.persist(member);
 
-            //영속
+            em.flush();
+            em.clear();
 
-            Member member = em.find(Member.class, 150L);
-            member.setName("AAAAA");
-
-            em.clear(); //통으로 다 날려버린다.
-
-            System.out.println("=================");
-
-            tx.commit(); /*완전 초기화 되기 때문에 커밋을 해도 아무일도 일어나지 않아*/
+            Team findTeam = em.find(Team.class, team.getId());
+            List<Member> members = findTeam.getMembers();
+            tx.commit();
         }catch (Exception e) {
 
             tx.rollback();
